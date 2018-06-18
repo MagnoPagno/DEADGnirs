@@ -44,7 +44,7 @@
 			'Aqinfo', [],...
 			'otherinfo', [],...
 			'calibration', [],...
-			'distance_settings', [])...
+			'distance', [])...
 
 
 		probe 
@@ -98,8 +98,8 @@ note
 						case 'measureinfo.otherinfo'
 							obj.measureinfo.otherinfo = varargin{i+1};
 
-						case 'measureinfo.distance_settings'
-							obj.measureinfo.distance_settings = varargin{i+1};
+						case 'measureinfo.distance'
+							obj.measureinfo.distance = varargin{i+1};
 							
 						case 'measureinfo.calibration'
 							obj.measureinfo.calibration = varargin{i+1};

@@ -1,7 +1,8 @@
-function Measure = provaload(location) 
-% Load a BOXY file data and store in the T table  
-% Inputs: path of the boxy file
-	
+function Measure = provaload(varargin) 
+% Load a BOXY file data 
+% Inputs: path of the boxy file adn optional a NIRSMeasure data 
+
+	location = varargin{1};
 	FILE_info = dir(location);
 
 %% Preliminar check on file
@@ -21,9 +22,9 @@ function Measure = provaload(location)
 		BOXYdata = [];
 		
 		frewind(FILE); %back to the begin of the file
-		while ~feof(FILE) 
+		while ~feof(FILE)  % till the end of file 
 			currentline = fgetl(FILE); 
-			fieldname = erase(currentline(isletter(currentline)),{'FALSE' , 'TRUE'});
+			fieldname = erase(currentline(isletter(currentline)),{'FALSE' , 'TRUE'}); %delete all the numbers and special characters from the string
 			switch fieldname
 				%load information common to all NIRS data
 				case 'DetectorChannels' 
@@ -59,8 +60,8 @@ function Measure = provaload(location)
 				case 'UpdateRateHz'
 					Aquisitioninfo.UpdateRate = sscanf(currentline, '%f');
 
-				otherwise
-					if contains(currentline,'FALSE')
+				otherwise%load the boxy only info
+					if contains(currentline,'FALSE')  
 						BOXYdata.(fieldname)=false;
 					end
 					if contains(currentline,'TRUE')
@@ -70,35 +71,162 @@ function Measure = provaload(location)
 			end
 		end
 		
+		frewind(FILE); %back to the begin of the file
+		currentline = fgetl(FILE); 
+		while ~contains(currentline,'#AUX CALIBRATION VALUES') %go to the AUX CAL line
+			currentline = fgetl(FILE);  
+			if currentline == -1  %if reach the endo of file exit
+				break
+			end
+		end
+		Auxcalibration = [];
+		currentline = fgetl(FILE);
+		RowName = split(erase(currentline,'-'),'	');  % save the row name
+		RowName = RowName(~cellfun('isempty',RowName));%remove empty cell 
+		while ~contains(currentline,'#')  %till the next settings
+			currentline = fgetl(FILE);
+			if contains(currentline,'Term') 
+				Auxcalibration.Term = sscanf(erase(currentline,'Term'),'%f');
+			end
+			if contains(currentline,'Factor')
+				Auxcalibration.Factor = sscanf(erase(currentline,'Factor'),'%f');
+			end
+			if currentline == -1
+				break
+			end
+		end
+		if ~isempty(Auxcalibration)
+			CalibrationInfo.Auxcalibration = struct2table(Auxcalibration,'RowNames',RowName(2:end));
+		end
+		
+		
+		frewind(FILE); %back to the begin of the file	
+		currentline = fgetl(FILE);
+		
+		CalibrationInfo.Wfcalibration = struct;
+		Wfcal = [];
+		
+		while ~contains(currentline,'#WF CALIBRATION VALUES') %go to the WGF CAL line
+			currentline = fgetl(FILE);  
+			if currentline == -1
+				break
+			end
+		end
+		currentline = fgetl(FILE);
+		
+		while ~contains(currentline,'#')
+			
+			DetectorCHName = currentline(1); %the 1 charaqcter of the line contain the Det Name
+			currentline = fgetl(FILE);
+			RowName = split(erase(currentline,'-'),'	');  % save the row name
+			RowName = RowName(2:end);
+			RowName = RowName(~cellfun('isempty',RowName));%remove empty cell 
+			while ~contains(currentline,{'Detector Channel','#'}) %till the next detector or settings
+				currentline = fgetl(FILE);
+				if contains(currentline,'Term')
+					Tempstr = split(erase(currentline,'Term'));
+					Tempstr = Tempstr(~cellfun('isempty',Tempstr));
+					Wfcal.Term = str2double(Tempstr);
+				end
+				if contains(currentline,'Factor')
+					Tempstr = split(erase(currentline,'Factor'));
+					Tempstr = Tempstr(~cellfun('isempty',Tempstr));
+					Wfcal.Factor = str2double(Tempstr);
+				end
+				if currentline == -1
+					break
+				end
+			end
+			if ~isempty(Wfcal)
+				CalibrationInfo.Wfcalibration.(DetectorCHName) = struct2table(Wfcal,'RowNames',RowName);
+			end
+			
+		end
+		
+		
+		frewind(FILE); %back to the begin of the file	
+		currentline = fgetl(FILE);
 
+		while ~contains(currentline,'#DISTANCE SETTINGS')
+			currentline = fgetl(FILE);  
+			if currentline == -1
+				break
+			end
+		end
+		currentline = fgetl(FILE);
+		
+		while ~contains(currentline,'#')
+			DetectorCHName = currentline(1);
+			currentline = fgetl(FILE);
+			RowName = split(erase(currentline,'-'),'	');  % save the row name
+			RowName = RowName(~cellfun('isempty',RowName));%remove empty cell 
+			while ~contains(currentline,{'Detector Channel','#'})
+				currentline = fgetl(FILE);
+				if ~(isempty(currentline) || contains(currentline,{'Detector Channel','#'}))
+					Tempstr = split(erase(currentline,'Term'));
+					Tempstr = Tempstr(~cellfun('isempty',Tempstr));
+					Dist = str2double(Tempstr); %save the dist info
+				end
+				if currentline == -1
+					break
+				end
+			end
+			if ~isempty(Dist)
+				Distance.(DetectorCHName) = array2table(Dist,'RowNames',RowName);
+			end
+			
+		end
+		
+		
+		
 %% Load raw data	
 		frewind(FILE); %back to the begin of the file	
 		currentline = fgetl(FILE);     %acquisisce linea per linea fino a che incontra i dati
 		while ~contains(currentline,'#DATA BEGINS')
 			currentline = fgetl(FILE);  
 			if currentline == -1
-				break
+				error('No data in the file')
 			end
 		end
-
 		ColumnName = split(erase(fgetl(FILE),'-'));  % save the column name
-		data = fscanf(FILE,'%f',[length(ColumnName)-1,Inf]); %parse all row data
+		ColumnName = ColumnName(~cellfun('isempty',ColumnName));%remove empty cell 
+		data = fscanf(FILE,'%f',[length(ColumnName),Inf]); %parse all row data
 
-		Mdata = array2table(data','VariableNames',ColumnName(1:end-1));  %save all
+		Mdata = array2table(data','VariableNames',ColumnName(1:end));  %save all
 	
-		Duration = Mdata.time(end) - Mdata.time(1); %ricavo la durata della misura
+		Duration = Mdata.time(end) - Mdata.time(1); %duration of the intair measure
 		
-		Mdata.reltime = Mdata.time - Mdata.time(1);
+		Mdata.reltime = Mdata.time - Mdata.time(1); %create the column of relative time 
 		Mdata = movevars(Mdata,'reltime','Before','time');
+		
+		
+		%%sampling frequency check
+		Aquisitioninfo.fscheck = abs(Aquisitioninfo.UpdateRate-1./mean(diff(Mdata.reltime)))./Aquisitioninfo.UpdateRate; %check if the frequency is correct (inserire una deviazione standard?)
 	
 %% Save all in a NIRS measure variable
-
+		if nargin == 1 %se non sono gia presenti dei dati
 		Measure = NIRSMeasure (...
 			'measureinfo.date', date, ...
 			'measureinfo.duration',Duration, ...
 			'measureinfo.Aqinfo', Aquisitioninfo,...
 			'measureinfo.otherinfo', BOXYdata,...
+			'measureinfo.calibration', CalibrationInfo,...
+			'measureinfo.distance', Distance,...
 			'data', Mdata);
-			
+		else 
+			if nargin == 2 %se sono gia presentio dei dati
+					Measure = NIRSMeasure (varargin{2},...
+									'measureinfo.date', date, ...
+									'measureinfo.duration',Duration, ...
+									'measureinfo.Aqinfo', Aquisitioninfo,...
+									'measureinfo.otherinfo', BOXYdata,...
+									'measureinfo.calibration', CalibrationInfo,...
+									'measureinfo.distance', Distance,...
+									'data', Mdata);
+			else
+				error('too many input argument')
+			end
+		end
+
 	end
 end	
