@@ -1,8 +1,8 @@
 
-
+close all
 %% Load database
 %inserire un percorso predefinito nel quale si andra a inserire l'app
-dbNIRS = loadNIRSDbase;
+dbNIRS = loadNIRSdb;
 
 
 

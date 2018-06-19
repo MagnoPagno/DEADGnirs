@@ -17,21 +17,27 @@ Hmain.Tree = uiw.widget.Tree(...
 
 
 
-%sistemare solo per prova
+%% sistemare solo per prova
 
 	studIcon = fullfile(matlabroot,'toolbox','matlab','icons','pagesicon.gif');
 	subjIcon = fullfile(matlabroot,'toolbox','matlab','icons','pageicon.gif');
 
 
-for idx = 1:dbNIRS.Nstudy
-		tresty(idx).lk = uiw.widget.TreeNode('Name',dbNIRS.study(idx).ID,'Parent',Hmain.Tree.Root);
-		setIcon(tresty(idx).lk,studIcon);
-		for idy = 1:dbNIRS.study(idx).Nsubj
-			temp = uiw.widget.TreeNode('Name',dbNIRS.study(idx).subj(idy).ID ,'Parent',tresty(idx).lk);
-			setIcon(temp,subjIcon);
-		end
-end
+	for idx = 1:dbNIRS.Nstudy
+			tresty(idx).lk = uiw.widget.TreeNode('Name',dbNIRS.study(idx).ID,'Parent',Hmain.Tree.Root);
+			setIcon(tresty(idx).lk,studIcon);
+			for idy = 1:dbNIRS.study(idx).Nsubj
+				temp = uiw.widget.TreeNode('Name',dbNIRS.study(idx).subj(idy).ID ,'Parent',tresty(idx).lk);
+				setIcon(temp,subjIcon);
+			end
+	end
 	
+%% clk sx for new study 	
+	% For the whole tree
+	treeContextMenu = uicontextmenu('Parent',Hmain.mainFigure);
+	uimenu(treeContextMenu,'Label','AddStudy','callback',{@NewNIRSstudy ,Hmain,dbNIRS});
+	uimenu(treeContextMenu,'Label','AddMeasure','callback',{@NewNIRSMeasure ,Hmain,dbNIRS});
+	set(Hmain.Tree,'UIContextMenu',treeContextMenu)
 
 
 end

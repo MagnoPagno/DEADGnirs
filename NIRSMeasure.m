@@ -11,9 +11,9 @@
 % 		meaureinfo.date				|date and hour of the measure [datetime]
 % 				.duration			|[datetime]
 % 				.Aqinfo				| 
-% 				.file_information	|
+% 				.otherinfo			|
 % 			    .calibration		|
-%	 			.distance_settings	|table of the calibration data
+%	 			.distance			|table of the calibration data
 % 
 % 		probe   | NIRS probe data 
 % 				
