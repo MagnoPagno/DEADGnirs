@@ -46,3 +46,5 @@ Hmain = NIRSToolbar(Hmain);
 
 
 Hmain.mainFigure.Visible = 'on';
+
+

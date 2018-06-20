@@ -196,8 +196,10 @@ function Measure = LoadBOXYdata(varargin)
 	
 		Duration = Mdata.time(end) - Mdata.time(1); %duration of the intair measure
 		
+
 		Mdata.reltime = Mdata.time - Mdata.time(1); %create the column of relative time 
-		Mdata = movevars(Mdata,'reltime','Before','time');
+% non funziona nelle versione del 2017
+%Mdata = movevars(Mdata,'reltime','Before','time');
 		
 		
 		%%sampling frequency check
