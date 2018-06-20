@@ -1,8 +1,8 @@
-function Measure = LoadBOXYdata(varargin) 
+function Measure = LoadBOXYdata(location,NIRSVariable,speed) 
 % Load a BOXY file data 
 % Inputs: path of the boxy file adn optional a NIRSMeasure data 
 
-	location = varargin{1};
+	
 	FILE_info = dir(location);
 
 %% Preliminar check on file
@@ -188,46 +188,51 @@ function Measure = LoadBOXYdata(varargin)
 				error('No data in the file')
 			end
 		end
-		ColumnName = split(erase(fgetl(FILE),'-'));  % save the column name
-		ColumnName = ColumnName(~cellfun('isempty',ColumnName));%remove empty cell 
-		data = fscanf(FILE,'%f',[length(ColumnName),Inf]); %parse all row data
-
-		Mdata = array2table(data','VariableNames',ColumnName(1:end));  %save all
-	
-		Duration = Mdata.time(end) - Mdata.time(1); %duration of the intair measure
 		
-
+		if speed == 'f'
+			fgetl(FILE);
+			data = textscan(FILE,'%f %*[^\n]');
+			Mdata.time = data{1};
+		else
+			ColumnName = split(erase(fgetl(FILE),'-'));  % save the column name
+			ColumnName = ColumnName(~cellfun('isempty',ColumnName));%remove empty cell 
+			data = fscanf(FILE,'%f',[length(ColumnName),Inf]); %parse all row data
+			Mdata = array2table(data','VariableNames',ColumnName(1:end));  %save all
+		end
+		
+		
+		Duration = Mdata.time(end) - Mdata.time(1); %duration of the intair measure
 		Mdata.reltime = Mdata.time - Mdata.time(1); %create the column of relative time 
-% non funziona nelle versione del 2017
-%Mdata = movevars(Mdata,'reltime','Before','time');
+
+		
+		
+		% non funziona nelle versione del 2017
+		%Mdata = movevars(Mdata,'reltime','Before','time');
 		
 		
 		%%sampling frequency check
 		Aquisitioninfo.fscheck = abs(Aquisitioninfo.UpdateRate-1./mean(diff(Mdata.reltime)))./Aquisitioninfo.UpdateRate; %check if the frequency is correct (inserire una deviazione standard?)
 	
 %% Save all in a NIRS measure variable
-		if nargin == 1 %se non sono gia presenti dei dati
-		Measure = NIRSMeasure (...
-			'measureinfo.date', date, ...
-			'measureinfo.duration',Duration, ...
-			'measureinfo.Aqinfo', Aquisitioninfo,...
-			'measureinfo.otherinfo', BOXYdata,...
-			'measureinfo.calibration', CalibrationInfo,...
-			'measureinfo.distance', Distance,...
-			'data', Mdata);
+		if isempty(NIRSVariable) %se non sono gia presenti dei dati
+			Measure = NIRSMeasure (...
+				'measureinfo.date', date, ...
+				'measureinfo.duration',Duration, ...
+				'measureinfo.Aqinfo', Aquisitioninfo,...
+				'measureinfo.otherinfo', BOXYdata,...
+				'measureinfo.calibration', CalibrationInfo,...
+				'measureinfo.distance', Distance,...
+				'data', Mdata);
 		else 
-			if nargin == 2 %se sono gia presentio dei dati
-					Measure = NIRSMeasure (varargin{2},...
-									'measureinfo.date', date, ...
-									'measureinfo.duration',Duration, ...
-									'measureinfo.Aqinfo', Aquisitioninfo,...
-									'measureinfo.otherinfo', BOXYdata,...
-									'measureinfo.calibration', CalibrationInfo,...
-									'measureinfo.distance', Distance,...
-									'data', Mdata);
-			else
-				error('too many input argument')
-			end
+		 %se sono gia presentio dei dati
+			Measure = NIRSMeasure (NIRSVariable,...
+				'measureinfo.date', date, ...
+				'measureinfo.duration',Duration, ...
+				'measureinfo.Aqinfo', Aquisitioninfo,...
+				'measureinfo.otherinfo', BOXYdata,...
+				'measureinfo.calibration', CalibrationInfo,...
+				'measureinfo.distance', Distance,...
+				'data', Mdata);
 		end
 
 	end
