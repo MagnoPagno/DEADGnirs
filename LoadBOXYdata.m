@@ -1,8 +1,15 @@
-function Measure = LoadBOXYdata(location,NIRSVariable,speed) 
+function Measure = LoadBOXYdata(location, ~, mode) 
 % Load a BOXY file data 
-% Inputs: path of the boxy file adn optional a NIRSMeasure data 
+% Inputs: path of the boxy file and a NIRSMeasure data or []
+% 
+fast = false; % default load all data
 
-	
+
+if ~isempty(mode)
+	if contains(mode,'f')
+		fast = true;
+	end
+end
 	FILE_info = dir(location);
 
 %% Preliminar check on file
@@ -11,11 +18,12 @@ function Measure = LoadBOXYdata(location,NIRSVariable,speed)
 	if (FILE == -1)    %check if exist
 		Error('file not found')
 		Measure = -1;
+	
 
-		
 %% Metadata load	
 	else
-		
+
+			
 
 		date =  FILE_info.date; %use the date of the file for the measure data 
 		Aquisitioninfo = [];
@@ -177,6 +185,8 @@ function Measure = LoadBOXYdata(location,NIRSVariable,speed)
 			
 		end
 		
+
+		
 		
 		
 %% Load raw data	
@@ -189,15 +199,30 @@ function Measure = LoadBOXYdata(location,NIRSVariable,speed)
 			end
 		end
 		
-		if speed == 'f'
-			fgetl(FILE);
-			data = textscan(FILE,'%f %*[^\n]');
-			Mdata.time = data{1};
+		fgetl(FILE);
+		temptimedata = textscan(FILE,'%f %*[^\n]');
+		Mdata.time = temptimedata{1};
+		if fast == true
+			
 		else
+			frewind(FILE); %back to the begin of the file	
+			currentline = fgetl(FILE);     %acquisisce linea per linea fino a che incontra i dati
+			while ~contains(currentline,'#DATA BEGINS') %return to the start of the data 
+				currentline = fgetl(FILE);  
+			end
 			ColumnName = split(erase(fgetl(FILE),'-'));  % save the column name
-			ColumnName = ColumnName(~cellfun('isempty',ColumnName));%remove empty cell 
-			data = fscanf(FILE,'%f',[length(ColumnName),Inf]); %parse all row data
-			Mdata = array2table(data','VariableNames',ColumnName(1:end));  %save all
+			ColumnName = ColumnName(~cellfun('isempty',ColumnName));%remove empty cell
+			fgetl(FILE);
+			
+			data = zeros (length(Mdata.time), length(ColumnName)); %pre alloc of the data
+			
+			for ii = 1 : length(Mdata.time)
+				currentline = fgetl(FILE);
+				data(ii , :) = sscanf(currentline, '%f'); 
+			end
+			
+%			data = fscanf(FILE,'%f',[length(ColumnName),Inf]); %parse all row data
+			Mdata = array2table(data,'VariableNames',ColumnName(1:end));  %save all
 		end
 		
 		
@@ -214,7 +239,7 @@ function Measure = LoadBOXYdata(location,NIRSVariable,speed)
 		Aquisitioninfo.fscheck = abs(Aquisitioninfo.UpdateRate-1./mean(diff(Mdata.reltime)))./Aquisitioninfo.UpdateRate; %check if the frequency is correct (inserire una deviazione standard?)
 	
 %% Save all in a NIRS measure variable
-		if isempty(NIRSVariable) %se non sono gia presenti dei dati
+
 			Measure = NIRSMeasure (...
 				'measureinfo.date', date, ...
 				'measureinfo.duration',Duration, ...
@@ -223,17 +248,7 @@ function Measure = LoadBOXYdata(location,NIRSVariable,speed)
 				'measureinfo.calibration', CalibrationInfo,...
 				'measureinfo.distance', Distance,...
 				'data', Mdata);
-		else 
-		 %se sono gia presentio dei dati
-			Measure = NIRSMeasure (NIRSVariable,...
-				'measureinfo.date', date, ...
-				'measureinfo.duration',Duration, ...
-				'measureinfo.Aqinfo', Aquisitioninfo,...
-				'measureinfo.otherinfo', BOXYdata,...
-				'measureinfo.calibration', CalibrationInfo,...
-				'measureinfo.distance', Distance,...
-				'data', Mdata);
-		end
+		
 
 	end
 end	

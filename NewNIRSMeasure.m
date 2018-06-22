@@ -20,7 +20,7 @@ function [StudyFigure,dbNIRS] = NewNIRSMeasure(object_handle, event,Hmain,dbNIRS
 		'Position',[0.01 0.39 0.45 0.6]);
 	
 	
- %data di nascita??
+ % inserire controllo data nascita 
 	%name
 	StudyFigure.Subject.SubjectName = uiw.widget.EditableText(...      
     'Parent',StudyFigure.Subject.Pannel,...=
@@ -38,6 +38,16 @@ function [StudyFigure,dbNIRS] = NewNIRSMeasure(object_handle, event,Hmain,dbNIRS
     'Value','Insert Surname',...
     'Callback',@(h,e)disp(e),...
     'Label','Surname:',...
+    'LabelLocation','left',...
+    'LabelWidth',90,...
+    'Units','normalized',...
+    'Position',[0.05 0.65 0.7 0.08]);
+
+	StudyFigure.Subject.BirthDate = uiw.widget.EditableText(...      
+    'Parent',StudyFigure.Subject.Pannel,...=
+    'Value','Insert Birthdate',...
+    'Callback',@(h,e)disp(e),...
+    'Label','Birthdate:',...
     'LabelLocation','left',...
     'LabelWidth',90,...
     'Units','normalized',...
@@ -173,7 +183,7 @@ function [StudyFigure,dbNIRS] = NewNIRSMeasure(object_handle, event,Hmain,dbNIRS
     'Parent', StudyFigure.MainFigure, ...
     'Value', '/home/pagno/Desktop/dati/demodata.txt', ...
     'Pattern', {'*.txt','TXT files (*.txt)'}, ...
-    'Callback',@(handle, event)FastLoadDatatoNewMeasureGUI(handle, event, StudyFigure),...
+    'Callback',@(handle, event)FastLoadDatatoNewMeasureGUI(handle, event, StudyFigure, dbNIRS),...
 	'UserData',StudyFigure,...
     'Label','Choose a data file:', ...
     'LabelLocation','left',...
@@ -210,18 +220,51 @@ end
 
 
 %% Auxiliary function
-function	LoadDatatoNewMeasureGUI(obj_handle ,~ ,main_handle)
+function	LoadDatatoNewMeasureGUI(obj_handle ,~ ,mainhandle,dbNIRS)
+		studyIdx = 0; %trovarlo nei dati sopra (Value del selezionatore a tendina)
+
+
 
 		set(obj_handle, 'Enable', 'off')
+		%inserire controllo su;lla bonta' dei campi
+		
 		drawnow;
-%in futuro inserire un controllo sui vari tipi di estensioni
-		if exist(main_handle.StudySelector.Value , 'file')	
-			DataNIRS = LoadBOXYdata(main_handle.StudySelector.Value, [], [] );
- 			main_handle.Measure.Date.Value = DataNIRS.measureinfo.date;
-			main_handle.Measure.Length.Value = [num2str(DataNIRS.measureinfo.duration),' s'];
-			main_handle.Measure.DetectorCH.Value = num2str(DataNIRS.measureinfo.Aqinfo.DetectorChannel);
-			main_handle.Measure.AnalogCH.Value = num2str(DataNIRS.measureinfo.Aqinfo.AuxiliaryAnalogChannels);
+		%in futuro inserire un controllo sui vari tipi di estensioni
+		if exist(mainhandle.StudySelector.Value , 'file')	
+			 %create a subject variable
+			subjecAge =  datetime -Subject.SubjectBirthDate.Value;   %finire di popolare
+			subject = NIRSSubject('name', Subject.SubjectName.Value,...
+				'sname', Subject.SubjectName.Value,...
+				'bdate', Subject.SubjectBirthDate.Value,...
+				'age', subjecAge,...
+				'apgar1', Subject.SubjectName.Value,...
+				'apgar5', Subject.SubjectName.Value,...
+				'note', Subject.SubjectName.Value);
+			%% creiamo e salviao il file dei dati
+			DataNIRS = LoadBOXYdata(mainhandle.StudySelector.Value, [], [] ); %load all the data present in the file
+ 			
+			DataNIRS = NIRSMeasure(DataNIRS,...
+				'measureID',ID,... %%crearlo dal database
+				'studyID',studyID,...  %%cercarlo dal database
+				'subject',subject,...
+				'probe', probe,...%%cercarlo nel database 
+				'eventss',eventss,...%%tirarli fuori in qualche modo
+				'video', video... %%se ce lo carichi altrimenti no
+				); % load all the metadata present in the window
 			
+			measurePath = fullfile(dbNIRS.path,studyID,measureID);
+			mkdir(measurePath);
+			filepath = fullfile(measurePath, 'Araw');
+			save(filepath,DataNIRS);
+			%% update database
+			measIdx = dbNIRS.Study(studyIdx).nMeasure +1;
+			dbNIRS.Study(studyIdx).nMeasure = measIdx;
+			dbNIRS.Study(studyIdx).Measure(measIdx).ID =;
+			dbNIRS.Study(studyIdx).Measure(measIdx).Date =;
+ 			dbNIRS.Study(studyIdx).Measure(measIdx).Length =;
+			dbNIRS.Study(studyIdx).Measure(measIdx).Subject =;
+			dbNIRS.Study(studyIdx).Measure(measIdx).Probe =;
+			dbNIRS.Study(studyIdx).Measure(measIdx).Fdata =;
 			else
 				Error('file not found')
 		end
@@ -251,211 +294,3 @@ end
 
 
 
-% % function	FastLoadDatatoNewMeasureGUI(obj_handle ,event ,main_handle)
-% % 
-% % 		set(obj_handle, 'Enable', 'off')
-% % 		drawnow;
-% % 		if exist(event.NewValue , 'file')	
-% % % 			
-% % % 			date =  FILE_info.date; %use the date of the file for the measure data 
-% % % 			Aquisitioninfo = [];
-% % % 			BOXYdata = [];
-% % % 			%% load al the metadata( display only few)
-% % % 			frewind(FILE); %back to the begin of the file
-% % % 			while ~feof(FILE)  % till the end of file 
-% % % 				currentline = fgetl(FILE); 
-% % % 				fieldname = erase(currentline(isletter(currentline)),{'FALSE' , 'TRUE'}); %delete all the numbers and special characters from the string
-% % % 				switch fieldname
-% % % 					%load information common to all NIRS data
-% % % 					case 'DetectorChannels' 
-% % % 						Aquisitioninfo.DetectorChannel = sscanf(currentline, '%f');
-% % % 
-% % % 					case 'ExterrnalMUXChannels'
-% % % 					Aquisitioninfo.ExternalMUCChannels = sscanf(currentline, '%f');
-% % % 
-% % % 					case 'AuxiliaryAnalogChannels'
-% % % 						Aquisitioninfo.AuxiliaryAnalogChannels = sscanf(currentline, '%f');
-% % % 
-% % % 					case 'AuxiliaryDigitalChannels'
-% % % 						Aquisitioninfo.AuxiliaryDigitalChannels = sscanf(currentline, '%f');
-% % % 
-% % % 
-% % % 					case 'WaveformCCFFrequencyHz'
-% % % 						Aquisitioninfo.CCFFrequency = sscanf(currentline, '%f');
-% % % 
-% % % 					case 'WaveformsSkipped'
-% % % 						Aquisitioninfo.WaveformsSkipped = sscanf(currentline, '%f');
-% % % 
-% % % 					case 'WaveformsAveraged'
-% % % 						Aquisitioninfo.WaveformsAveraged = sscanf(currentline, '%f');
-% % % 
-% % % 					case 'CyclesAveraged'
-% % % 						Aquisitioninfo.CyclesAveraged = sscanf(currentline, '%f');
-% % % 
-% % % 
-% % % 					case 'AcquisitionsperWaveform'
-% % % 						Aquisitioninfo.AcquisitionsPerWaveform = sscanf(currentline, '%f');
-% % % 
-% % % 
-% % % 					case 'UpdateRateHz'
-% % % 						Aquisitioninfo.UpdateRate = sscanf(currentline, '%f');
-% % % 
-% % % 					otherwise%load the boxy only info
-% % % 						if contains(currentline,'FALSE')  
-% % % 							BOXYdata.(fieldname)=false;
-% % % 						end
-% % % 						if contains(currentline,'TRUE')
-% % % 							BOXYdata.(fieldname)=true;
-% % % 						end
-% % % 
-% % % 				end
-% % % 			end
-% % % 
-% % % 			frewind(FILE); %back to the begin of the file
-% % % 			currentline = fgetl(FILE); 
-% % % 			while ~contains(currentline,'#AUX CALIBRATION VALUES') %go to the AUX CAL line
-% % % 				currentline = fgetl(FILE);  
-% % % 				if currentline == -1  %if reach the endo of file exit
-% % % 					break
-% % % 				end
-% % % 			end
-% % % 			Auxcalibration = [];
-% % % 			currentline = fgetl(FILE);
-% % % 			RowName = split(erase(currentline,'-'),'	');  % save the row name
-% % % 			RowName = RowName(~cellfun('isempty',RowName));%remove empty cell 
-% % % 			while ~contains(currentline,'#')  %till the next settings
-% % % 				currentline = fgetl(FILE);
-% % % 				if contains(currentline,'Term') 
-% % % 					Auxcalibration.Term = sscanf(erase(currentline,'Term'),'%f');
-% % % 				end
-% % % 				if contains(currentline,'Factor')
-% % % 					Auxcalibration.Factor = sscanf(erase(currentline,'Factor'),'%f');
-% % % 				end
-% % % 				if currentline == -1
-% % % 					break
-% % % 				end
-% % % 			end
-% % % 			if ~isempty(Auxcalibration)
-% % % 				CalibrationInfo.Auxcalibration = struct2table(Auxcalibration,'RowNames',RowName(2:end));
-% % % 			end
-% % % 
-% % % 
-% % % 			frewind(FILE); %back to the begin of the file	
-% % % 			currentline = fgetl(FILE);
-% % % 
-% % % 			CalibrationInfo.Wfcalibration = struct;
-% % % 			Wfcal = [];
-% % % 
-% % % 			while ~contains(currentline,'#WF CALIBRATION VALUES') %go to the WGF CAL line
-% % % 				currentline = fgetl(FILE);  
-% % % 				if currentline == -1
-% % % 					break
-% % % 				end
-% % % 			end
-% % % 			currentline = fgetl(FILE);
-% % % 
-% % % 			while ~contains(currentline,'#')
-% % % 
-% % % 				DetectorCHName = currentline(1); %the 1 charaqcter of the line contain the Det Name
-% % % 				currentline = fgetl(FILE);
-% % % 				RowName = split(erase(currentline,'-'),'	');  % save the row name
-% % % 				RowName = RowName(2:end);
-% % % 				RowName = RowName(~cellfun('isempty',RowName));%remove empty cell 
-% % % 				while ~contains(currentline,{'Detector Channel','#'}) %till the next detector or settings
-% % % 					currentline = fgetl(FILE);
-% % % 					if contains(currentline,'Term')
-% % % 						Tempstr = split(erase(currentline,'Term'));
-% % % 						Tempstr = Tempstr(~cellfun('isempty',Tempstr));
-% % % 						Wfcal.Term = str2double(Tempstr);
-% % % 					end
-% % % 					if contains(currentline,'Factor')
-% % % 						Tempstr = split(erase(currentline,'Factor'));
-% % % 						Tempstr = Tempstr(~cellfun('isempty',Tempstr));
-% % % 						Wfcal.Factor = str2double(Tempstr);
-% % % 					end
-% % % 					if currentline == -1
-% % % 						break
-% % % 					end
-% % % 				end
-% % % 				if ~isempty(Wfcal)
-% % % 					CalibrationInfo.Wfcalibration.(DetectorCHName) = struct2table(Wfcal,'RowNames',RowName);
-% % % 				end
-% % % 
-% % % 			end
-% % % 
-% % % 
-% % % 			frewind(FILE); %back to the begin of the file	
-% % % 			currentline = fgetl(FILE);
-% % % 
-% % % 			while ~contains(currentline,'#DISTANCE SETTINGS')
-% % % 				currentline = fgetl(FILE);  
-% % % 				if currentline == -1
-% % % 					break
-% % % 				end
-% % % 			end
-% % % 			currentline = fgetl(FILE);
-% % % 
-% % % 			while ~contains(currentline,'#')
-% % % 				DetectorCHName = currentline(1);
-% % % 				currentline = fgetl(FILE);
-% % % 				RowName = split(erase(currentline,'-'),'	');  % save the row name
-% % % 				RowName = RowName(~cellfun('isempty',RowName));%remove empty cell 
-% % % 				while ~contains(currentline,{'Detector Channel','#'})
-% % % 					currentline = fgetl(FILE);
-% % % 					if ~(isempty(currentline) || contains(currentline,{'Detector Channel','#'}))
-% % % 						Tempstr = split(erase(currentline,'Term'));
-% % % 						Tempstr = Tempstr(~cellfun('isempty',Tempstr));
-% % % 						Dist = str2double(Tempstr); %save the dist info
-% % % 					end
-% % % 					if currentline == -1
-% % % 						break
-% % % 					end
-% % % 				end
-% % % 				if ~isempty(Dist)
-% % % 					Distance.(DetectorCHName) = array2table(Dist,'RowNames',RowName);
-% % % 				end
-% % % 
-% % % 			end
-% % % 		
-% % % 			
-% % % 		%load time info	 
-% % % 			frewind(FILE); %back to the begin of the file	
-% % % 			currentline = fgetl(FILE);     %acquisisce linea per linea fino a che incontra i dati
-% % % 			while ~contains(currentline,'#DATA BEGINS')
-% % % 				currentline = fgetl(FILE);  
-% % % 				if currentline == -1
-% % % 					error('No data in the file')
-% % % 				end
-% % % 			end
-% % % 			
-% % % 			
-% % % 			
-% % % 			Duration = 4
-% % %% Save all in a NIRS measure variable
-% % % 		
-% % % 			DataNIRS = NIRSMeasure (...
-% % % 				'measureinfo.date', date, ...
-% % % 				'measureinfo.duration',Duration, ...
-% % % 				'measureinfo.Aqinfo', Aquisitioninfo,...
-% % % 				'measureinfo.otherinfo', BOXYdata,...
-% % % 				'measureinfo.calibration', CalibrationInfo,...
-% % % 				'measureinfo.distance', Distance);
-% % 			
-% %  			main_handle.Measure.Date.Value = DataNIRS.measureinfo.date;
-% % 			main_handle.Measure.Length.Value = [num2str(DataNIRS.measureinfo.duration),' s'];
-% % 			main_handle.Measure.DetectorCH.Value = num2str(DataNIRS.measureinfo.Aqinfo.DetectorChannel);
-% % 			main_handle.Measure.AnalogCH.Value = num2str(DataNIRS.measureinfo.Aqinfo.AuxiliaryAnalogChannels);
-% % 			
-% % 			else
-% % 				Error('file not found')
-% % 		end
-% % 		set(obj_handle, 'Enable', 'on')
-% % end
-% % 
-% % 
-% % 
-% % 
-% % 	
-% % 
-% % 
-% % 
