@@ -1,65 +1,65 @@
  classdef NIRSMeasure
 %     This class hold NIRS measure data
 % 	Propreties:
-%		
-%		measureID
-% 
-%		studyID
 %
-% 		subject	 | NIRS subject data 
+%		AnalysisID
+%
+%		MeasureID
+% 
+%		StudyID
+%
+% 		Subject	 | NIRS subject data 
 % 		
-% 		meaureinfo.date				|date and hour of the measure [datetime]
+% 		MeaureInfo.date				|date and hour of the measure [datetime]
 % 				.duration			|[datetime]
 % 				.Aqinfo				| 
 % 				.otherinfo			|
 % 			    .calibration		|
 %	 			.distance			|table of the calibration data
 % 
-% 		probe   | NIRS probe data 
+% 		Probe   | NIRS probe data 
 % 				
-% 		eventss	.codes		|array of the codes associated to the event 
-% 				.labels		|array of string that label the event
-% 				.time		|matrix that identify the moment of each stimulus
+% 		Eventss	
 % 				
-% 		data				|table of the data of the measure
+% 		Data				|table of the data of the measure
 % 				
-% 		video				|video of the measure
+% 		Video				|video of the measure
 % 				
-% 		analysis			| applied analysis 
+% 		Analysis			| applied analysis 
 % 
-%		note				| note on the measure 
+%		Note				| note on the measure 
 % 		
 				
     
     properties
 		
-		measureID
+		AnalysisID
 		
-		studyID	
+		MeasureID
 		
-		subject
+		StudyID	
+		
+		Subject
 
-		measureinfo = struct('date', [],...
-			'duration', [],...
-			'Aqinfo', [],...
-			'otherinfo', [],...
-			'calibration', [],...
-			'distance', [])...
+		MeasureInfo = struct('Date', [],...
+			'Duration', [],...
+			'AqInfo', [],...
+			'OtherInfo', [],...
+			'Calibration', [],...
+			'Distance', [])...
 
 
-		probe 
+		Probe 
 
-		eventss = struct('colors', [],...
-		  'codes', [],...
-		  'labels', [])
+		Eventss 
 
-		data
+		Data
 
-		video 
+		Video 
 
-		analysis 
+		Analysis 
 
-note
+		Note
     end
     
     methods
@@ -77,54 +77,52 @@ note
 				for i = 1:2:(nargin-1)
 
 					switch varargin{i}		
-						case 'measureID'
-							obj.subject.name = varargin{i+1};
-
-						case 'studyID'
-							obj.subject.sname = varargin{i+1};
-
-						case 'subject'
-							obj.subject.bdate = varargin{i+1};
-
-						case 'measureinfo.date'
-							obj.measureinfo.date = varargin{i+1};
-
-						case 'measureinfo.duration'
-							obj.measureinfo.duration = varargin{i+1};
-
-						case 'measureinfo.Aqinfo'
-							obj.measureinfo.Aqinfo = varargin{i+1};
-
-						case 'measureinfo.otherinfo'
-							obj.measureinfo.otherinfo = varargin{i+1};
-
-						case 'measureinfo.distance'
-							obj.measureinfo.distance = varargin{i+1};
+						case 'AnalysisID'
+							obj.AnalysisID = varargin{i+1};
 							
-						case 'measureinfo.calibration'
-							obj.measureinfo.calibration = varargin{i+1};
+						case 'MeasureID'
+							obj.MeasureID = varargin{i+1};	
 
-						case 'probe'
-							obj.probe = varargin{i+1};
+						case 'StudyID'
+							obj.StudyID = varargin{i+1};
 
-						case 'eventss.colors'
-							obj.eventss.colors = varargin{i+1};
+						case 'Subject'
+							obj.Subject = varargin{i+1};
 
-						case 'eventss.codes'
-							obj.eventss.codes = varargin{i+1};
+						case 'MeasureInfo.Date'
+							obj.MeasureInfo.Date = varargin{i+1};
 
-						case 'eventss.labels'
-							obj.eventss.labels = varargin{i+1};
+						case 'MeasureInfo.Duration'
+							obj.MeasureInfo.Duration = varargin{i+1};
 
-						case 'data'
-							obj.data = varargin{i+1};
+						case 'MeasureInfo.AqInfo'
+							obj.MeasureInfo.AqInfo = varargin{i+1};
 
-						case 'video'
-							obj.video = varargin{i+1};
+						case 'MeasureInfo.OtherInfo'
+							obj.MeasureInfo.OtherInfo = varargin{i+1};
+
+						case 'MeasureInfo.Distance'
+							obj.MeasureInfo.Distance = varargin{i+1};
+							
+						case 'MeasureInfo.Calibration'
+							obj.MeasureInfo.Calibration = varargin{i+1};
+
+						case 'Probe'
+							obj.Probe = varargin{i+1};
+
+						case 'Eventss'
+							obj.Eventss = varargin{i+1};
 
 
-						case 'analysis'
-							obj.analysis = varargin{i+1};
+						case 'Data'
+							obj.Data = varargin{i+1};
+
+						case 'Video'
+							obj.Video = varargin{i+1};
+
+
+						case 'Analysis'
+							obj.Analysis = varargin{i+1};
 
 						otherwise 
 							warning('data not loaded')

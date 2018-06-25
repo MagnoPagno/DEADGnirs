@@ -5,7 +5,6 @@ function [Hmain] = NIRSTree(Hmain,dbNIRS)
 
 Hmain.Tree = uiw.widget.Tree(...
     'Parent',Hmain.mainFigure,...
-    'SelectionChangeFcn',@ExpandBrach,...
     'Label','Tree:', ...
     'LabelLocation','top',...
     'LabelHeight',18,...
@@ -14,6 +13,7 @@ Hmain.Tree = uiw.widget.Tree(...
 	'RootVisible', 'false'...
 	);%'SelectionType', 'discontiguous'...
 	
+%	'NodeExpandedCallback',{@ExpandBrach, Hmain},...
 
 
 
@@ -24,11 +24,11 @@ Hmain.Tree = uiw.widget.Tree(...
 	subjIcon = fullfile(matlabroot,'toolbox','matlab','icons','pageicon.gif');
 
 
-	for idx = 1:dbNIRS.Nstudy
-			tresty(idx).lk = uiw.widget.TreeNode('Name',dbNIRS.study(idx).ID,'Parent',Hmain.Tree.Root);
-			setIcon(tresty(idx).lk,studIcon);
-			for idy = 1:dbNIRS.study(idx).Nsubj
-				temp = uiw.widget.TreeNode('Name',dbNIRS.study(idx).subj(idy).ID ,'Parent',tresty(idx).lk);
+	for idx = 1:dbNIRS.nStudy
+			Hmain.TreeNode(idx).lk = uiw.widget.TreeNode('Name',dbNIRS.Study(idx).Nome,'Parent',Hmain.Tree.Root);
+			setIcon(Hmain.TreeNode(idx).lk,studIcon);
+			for idy = 1:dbNIRS.Study(idx).nMeasure
+				temp = uiw.widget.TreeNode('Name',dbNIRS.Study(idx).Measure(idy).Subject.name ,'Parent',Hmain.TreeNode(idx).lk);
 				setIcon(temp,subjIcon);
 			end
 	end
@@ -44,13 +44,11 @@ Hmain.Tree = uiw.widget.Tree(...
 end
 
 %% Auxyliary function
-
-function ExpandBrach (obj_handle ,objselect )
-	for i = 1:length(obj_handle.Root.Children)
-		obj_handle.collapseNode(obj_handle.Root.Children(i));
-	end
-	drawnow;
-	objselect.Nodes.expand();
-
-
-end
+% 
+% function ExpandBrach (~ ,objselect , MainHandle)
+% 	
+% % 	for i = 1: length()
+% % 		obj_handle.collapseNode;
+% % 	end
+% 
+% end

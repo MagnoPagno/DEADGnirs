@@ -1,5 +1,8 @@
 function DataBase = loadNIRSdb()
 %	solo di prova
-	DataBase = load('NIRSDataBase.mat');
+	path = 'proca/NIRSDataBase';
+	dbPath = fullfile(path,'NIRSDataBase.mat');
+	tempDataBase = load(dbPath,'DataBase'); %load the old database
+	DataBase = tempDataBase.DataBase;
 end
 

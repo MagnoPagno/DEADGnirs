@@ -38,12 +38,14 @@ Hmain.mainFigure = figure('Visible', 'off', ...
 
 
 
-Hmain = NIRSTree(Hmain,dbNIRS);
 
 Hmain = NIRSToolbar(Hmain);
 
+Hmain = NIRSTree(Hmain,dbNIRS);
 
+Hmain = NIRSDisplayMeasure(Hmain,dbNIRS);
 
+Hmain = NIRSDisplayStudy(Hmain,dbNIRS);
 
 Hmain.mainFigure.Visible = 'on';
 

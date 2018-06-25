@@ -1,7 +1,7 @@
 function StudyFigure = NewNIRSStudy(~, ~, Hmain,~)
 		
 	
-	path = '/home/pagno/Desktop/MyProg/procadb/NIRSDataBase'; %solo di prova integrare il databse del tuto quando si accende
+	path = '/home/pagno/Desktop/MyProg/proca/NIRSDataBase'; %solo di prova integrare il databse del tuto quando si accende
 
 
 
@@ -62,7 +62,7 @@ end
 
 
 function	AddStudytoDataBase( ~, ~, path , studyhandle )
-	dbPath = fullfile(path,'DBnirs.mat');
+	dbPath = fullfile(path,'NIRSDataBase.mat');
 	if ~exist(dbPath,'file') %check if it exixst and then create it
 		error('database not found')
 	end
@@ -75,25 +75,31 @@ function	AddStudytoDataBase( ~, ~, path , studyhandle )
 	DataBase = tempDataBase.DataBase; %vedere se c'e' un modo migliore 
 	
 	if DataBase.nStudy == 0 %first study in the database create new id
-		ID = [DataBase.ID , 'S000'];
+		studyID = [DataBase.ID , 'S000'];
+		DataBase.nStudy = 1;
 	else
 		oldID = DataBase.Study(DataBase.nStudy).ID(9:11); %last 3 IDnumber of the study
-		ID = [DataBase.ID , 'S' ,int2str(oldID+1)]; % add 1 to generate the new id
-	end
-	DataBase.nStudy = DataBase.nStudy + 1; 
+		studyID = [DataBase.ID , 'S' ,num2str(str2double(oldID)+1,'%.3d')]; % add 1 to generate the new id
+		DataBase.nStudy = DataBase.nStudy + 1;
+	end	 
 	
-	DataBase.Study(DataBase.nStudy).ID = ID;
-	DataBase.Study(DataBase.nStudy).Nome = studyhandle.Subject.StudyName;
+	DataBase.Study(DataBase.nStudy).ID = studyID;
+	DataBase.Study(DataBase.nStudy).Nome = studyhandle.Subject.StudyName.Value;
 	DataBase.Study(DataBase.nStudy).Data = datetime;
 	DataBase.Study(DataBase.nStudy).nMeasure = 0;
 	DataBase.Study(DataBase.nStudy).nGroups = 0;
 	DataBase.Study(DataBase.nStudy).MeasureLength = 0;
 	DataBase.Study(DataBase.nStudy).AnalysisLength = 0;
-	DataBase.Study(DataBase.nStudy).Mieasure = [];
+	DataBase.Study(DataBase.nStudy).Measure = [];
 	DataBase.Study(DataBase.nStudy).Groups = [];
-
-
+	
+	%crea la nuova cartella del db
+	studyPath = fullfile(DataBase.Path,studyID);
+	mkdir(studyPath);
+	
 	save(dbPath,'DataBase');
+	
+	close(studyhandle.MainFigure);
 
 
 end

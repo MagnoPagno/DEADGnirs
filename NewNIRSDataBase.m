@@ -3,7 +3,7 @@ function NewNIRSDataBase(path)
 
 %% Create a new ID
 nID = randi(1000000)-1; %creo un  numero compreso tra 0 e 999999
-snID = num2str(nID);
+snID = num2str(nID,'%.6d');
 ID = ['D', snID]; %create yhe ID
 
 %% create the directory of DB
@@ -19,6 +19,7 @@ end
 DataBase = [];
 DataBase.ID = ID;
 
+
 DataBase.nStudy = 0;
 DataBase.nProbe = 0;
 DataBase.nAnatomy = 0;
@@ -28,7 +29,10 @@ DataBase.Probe = [];
 DataBase.Anatomy = [];
 
 %% save all
-filefullPath = fullfile(dirFullPath, 'DBnirs');
+
+DataBase.Path = dirFullPath;
+filefullPath = fullfile(dirFullPath, 'NIRSDataBase');
+
 save(filefullPath,'DataBase');
 	
 

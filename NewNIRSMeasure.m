@@ -1,5 +1,10 @@
-function [StudyFigure,dbNIRS] = NewNIRSMeasure(object_handle, event,Hmain,dbNIRS)
-	StudyFigure.MainFigure = figure('Visible', 'on', ...
+function [StudyFigure,dbNIRS] = NewNIRSMeasure(objHandle, ~ ,Hmain,dbNIRS)
+	
+	set(objHandle, 'Enable', 'off')
+	drawnow;
+
+
+StudyFigure.MainFigure = figure('Visible', 'on', ...
 	'position', Hmain.screenSize.*(3/4),...
     'Resize', 'on',...
     'Name', 'New NIRS measure', ...
@@ -9,11 +14,13 @@ function [StudyFigure,dbNIRS] = NewNIRSMeasure(object_handle, event,Hmain,dbNIRS
     'DoubleBuffer', 'on', ...
     'DockControls', 'off', ...
     'Renderer', 'OpenGL',...
+	'DeleteFcn', {@renableHandle,objHandle},...
 	'Visible', 'off' ...
 );
 
 %% Editable text for subject
-	StudyFigure.Subject.Pannel = uipanel (...
+	
+StudyFigure.Subject.Pannel = uipanel (...
 		'Title', 'Subject', ...
 		'parent', StudyFigure.MainFigure,...
 		'Units', 'normalized',...
@@ -22,7 +29,7 @@ function [StudyFigure,dbNIRS] = NewNIRSMeasure(object_handle, event,Hmain,dbNIRS
 	
  % inserire controllo data nascita 
 	%name
-	StudyFigure.Subject.SubjectName = uiw.widget.EditableText(...      
+	StudyFigure.Subject.Name = uiw.widget.EditableText(...      
     'Parent',StudyFigure.Subject.Pannel,...=
     'Value','Insert Name',...
     'Callback',@(h,e)disp(e),...
@@ -33,7 +40,7 @@ function [StudyFigure,dbNIRS] = NewNIRSMeasure(object_handle, event,Hmain,dbNIRS
     'Position',[0.05 0.85 0.7 0.08]);
 	
 	%surname
-	StudyFigure.Subject.SubjectSurname = uiw.widget.EditableText(...      
+	StudyFigure.Subject.Surname = uiw.widget.EditableText(...      
     'Parent',StudyFigure.Subject.Pannel,...=
     'Value','Insert Surname',...
     'Callback',@(h,e)disp(e),...
@@ -54,7 +61,7 @@ function [StudyFigure,dbNIRS] = NewNIRSMeasure(object_handle, event,Hmain,dbNIRS
     'Position',[0.05 0.65 0.7 0.08]);
 
 	%Apgar1
-	StudyFigure.Subject.SubjectApgar1 = uiw.widget.EditableText(...      
+	StudyFigure.Subject.Apgar1 = uiw.widget.EditableText(...      
     'Parent',StudyFigure.Subject.Pannel,...=
     'Value','Insert Apgar1',...
     'Callback',@(h,e)disp(e),...
@@ -65,7 +72,7 @@ function [StudyFigure,dbNIRS] = NewNIRSMeasure(object_handle, event,Hmain,dbNIRS
     'Position',[0.05 0.45 0.7 0.08]);
 
 	%Apgar5
-	StudyFigure.Subject.SubjectApgar5 = uiw.widget.EditableText(...      
+	StudyFigure.Subject.Apgar5 = uiw.widget.EditableText(...      
     'Parent',StudyFigure.Subject.Pannel,...=
     'Value','Insert Apgar5',...
     'Callback',@(h,e)disp(e),...
@@ -76,7 +83,7 @@ function [StudyFigure,dbNIRS] = NewNIRSMeasure(object_handle, event,Hmain,dbNIRS
     'Position',[0.05 0.25 0.7 0.08]);
 
 	%note
-	StudyFigure.Subject.Subjectnote = uiw.widget.EditableText(...      
+	StudyFigure.Subject.Note = uiw.widget.EditableText(...      
     'Parent',StudyFigure.Subject.Pannel,...=
     'Value','',...
     'Callback',@(h,e)disp(e),...
@@ -151,7 +158,7 @@ function [StudyFigure,dbNIRS] = NewNIRSMeasure(object_handle, event,Hmain,dbNIRS
 %% Popup for select the study
 	StudyFigure.StudySelector = uiw.widget.EditablePopupWithButton(...
     'Parent',StudyFigure.MainFigure,...
-    'Items',{dbNIRS.study.ID},...
+    'Items',{dbNIRS.Study.Nome},...
     'Value',Hmain.Tree.SelectedNodes.Name,...
     'Callback',@(h,e)disp(e.Interaction),...
     'Callback',@(h,e)disp(e),...
@@ -179,11 +186,11 @@ function [StudyFigure,dbNIRS] = NewNIRSMeasure(object_handle, event,Hmain,dbNIRS
 
 %% File selector for the measure data
 
-	StudyFigure.StudySelector = uiw.widget.FileSelector(...
+	StudyFigure.MeasureSelector = uiw.widget.FileSelector(...
     'Parent', StudyFigure.MainFigure, ...
     'Value', '/home/pagno/Desktop/dati/demodata.txt', ...
     'Pattern', {'*.txt','TXT files (*.txt)'}, ...
-    'Callback',@(handle, event)FastLoadDatatoNewMeasureGUI(handle, event, StudyFigure, dbNIRS),...
+    'Callback',@(handle, event)FastLoadDatatoNewMeasureGUI(handle, event, StudyFigure),...
 	'UserData',StudyFigure,...
     'Label','Choose a data file:', ...
     'LabelLocation','left',...
@@ -212,7 +219,7 @@ function [StudyFigure,dbNIRS] = NewNIRSMeasure(object_handle, event,Hmain,dbNIRS
 		'String', 'Load',...
 		'Units', 'normalize', ...
         'Position', [0.8 0.15 0.1 0.04],...
-        'Callback', {@LoadDatatoNewMeasureGUI ,StudyFigure}); 
+        'Callback', {@LoadDatatoNewMeasureGUI ,StudyFigure , dbNIRS}); 
 	
 	StudyFigure.MainFigure.Visible = 'on';
 end
@@ -220,77 +227,113 @@ end
 
 
 %% Auxiliary function
-function	LoadDatatoNewMeasureGUI(obj_handle ,~ ,mainhandle,dbNIRS)
-		studyIdx = 0; %trovarlo nei dati sopra (Value del selezionatore a tendina)
+function	LoadDatatoNewMeasureGUI(ObjHandle ,~ ,MainHandle,DataBase)
+		nsamples = 500; % n of samples af the light data for the db
+		datatolightsave = 'DC'; %save only DC component in the database add 'ph' o AC for other component
 
 
 
-		set(obj_handle, 'Enable', 'off')
-		%inserire controllo su;lla bonta' dei campi
-		
+
+
+
+
+		set(ObjHandle, 'Enable', 'off')
 		drawnow;
+		
+		%inserire controllo su;lla bonta' dei campi
 		%in futuro inserire un controllo sui vari tipi di estensioni
-		if exist(mainhandle.StudySelector.Value , 'file')	
-			 %create a subject variable
-			subjecAge =  datetime -Subject.SubjectBirthDate.Value;   %finire di popolare
-			subject = NIRSSubject('name', Subject.SubjectName.Value,...
-				'sname', Subject.SubjectName.Value,...
-				'bdate', Subject.SubjectBirthDate.Value,...
-				'age', subjecAge,...
-				'apgar1', Subject.SubjectName.Value,...
-				'apgar5', Subject.SubjectName.Value,...
-				'note', Subject.SubjectName.Value);
+		if exist(MainHandle.MeasureSelector.Value , 'file')	
+			
+			%create misure idx
+			selectedStudyIdx = MainHandle.StudySelector.SelectedIndex;
+			SelectedStudy = DataBase.Study(selectedStudyIdx);
+			if SelectedStudy.nMeasure == 0
+				measureID = [SelectedStudy.ID , 'M000']; 
+			else
+				oldID = SelectedStudy.Measure(SelectedStudy.nMeasure).ID(13:15); %take only the 3 significant digits
+				newID = num2str(str2double(oldID)+1,'%.3d');
+				measureID =[SelectedStudy.ID ,'M',newID ]; 
+			end
+			
+			%create a subject variable
+			subjectBDate = MainHandle.Subject.BirthDate.Value;%subjectBDate = '31/03/2018'
+			subjectAge =  datetime - datetime(subjectBDate);   
+			Subject = NIRSSubject('name', MainHandle.Subject.Name.Value,...
+				'sname', MainHandle.Subject.Surname.Value,...
+				'bdate', MainHandle.Subject.BirthDate.Value,...
+				'age', subjectAge,...
+				'apgar1', MainHandle.Subject.Apgar1.Value,...
+				'apgar5', MainHandle.Subject.Apgar5.Value,...
+				'note', MainHandle.Subject.Note.Value);
 			%% creiamo e salviao il file dei dati
-			DataNIRS = LoadBOXYdata(mainhandle.StudySelector.Value, [], [] ); %load all the data present in the file
+			DataNIRS = LoadBOXYdata(MainHandle.MeasureSelector.Value, [], [] ); %load all the data present in the file
  			
+			analysisID = [ measureID,'A000'];
 			DataNIRS = NIRSMeasure(DataNIRS,...
-				'measureID',ID,... %%crearlo dal database
-				'studyID',studyID,...  %%cercarlo dal database
-				'subject',subject,...
-				'probe', probe,...%%cercarlo nel database 
-				'eventss',eventss,...%%tirarli fuori in qualche modo
-				'video', video... %%se ce lo carichi altrimenti no
+				'AnalysisID',analysisID,... 
+				'MeasureID',measureID,... 
+				'StudyID',SelectedStudy.ID,... 
+				'Subject',Subject,...
+				'Probe', [],...%%cercarlo nel database 
+				'Eventss',[],...%%tirarli fuori in qualche modo
+				'Video',[]... %%se ce lo carichi altrimenti no
 				); % load all the metadata present in the window
 			
-			measurePath = fullfile(dbNIRS.path,studyID,measureID);
+			measurePath = fullfile(DataBase.Path,SelectedStudy.ID,measureID);
 			mkdir(measurePath);
-			filepath = fullfile(measurePath, 'Araw');
-			save(filepath,DataNIRS);
+			filepath = fullfile(measurePath, 'A000');
+			save(filepath,'DataNIRS');
 			%% update database
-			measIdx = dbNIRS.Study(studyIdx).nMeasure +1;
-			dbNIRS.Study(studyIdx).nMeasure = measIdx;
-			dbNIRS.Study(studyIdx).Measure(measIdx).ID =;
-			dbNIRS.Study(studyIdx).Measure(measIdx).Date =;
- 			dbNIRS.Study(studyIdx).Measure(measIdx).Length =;
-			dbNIRS.Study(studyIdx).Measure(measIdx).Subject =;
-			dbNIRS.Study(studyIdx).Measure(measIdx).Probe =;
-			dbNIRS.Study(studyIdx).Measure(measIdx).Fdata =;
+			measIdx = DataBase.Study(selectedStudyIdx).nMeasure +1;
+			
+			DataBase.Study(selectedStudyIdx).nMeasure = measIdx;
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).ID =measureID;
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).Date =DataNIRS.MeasureInfo.Date;
+ 			DataBase.Study(selectedStudyIdx).Measure(measIdx).Duration =DataNIRS.MeasureInfo.Duration;
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).Subject =Subject;
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).Probe =[];
+			
+				
+			columnName = DataNIRS.Data.Properties.VariableNames; %obtain al the column name in order to select the DC ones
+			dcIdx = contains(columnName,datatolightsave);   %obtain the selected column
+			step = ceil(linspace(DataNIRS.Data{1,1},DataNIRS.Data{end,1},nsamples));
+			
+			lightdata = [table(DataNIRS.Data.reltime(step),'VariableNames', {'reltime'}), DataNIRS.Data(step,dcIdx)];
+			
+			
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).Ldata = lightdata;
+			
+			
+			saveDBPath = fullfile(DataBase.Path ,'NIRSDataBase.mat');
+			save(saveDBPath,'DataBase');
 			else
-				Error('file not found')
+				error('file not found')
 		end
-		set(obj_handle, 'Enable', 'on')
+		set(ObjHandle, 'Enable', 'on')
 end
 		
 
 
-function	FastLoadDatatoNewMeasureGUI(obj_handle ,event ,main_handle)
+function	FastLoadDatatoNewMeasureGUI(ObjHandle ,event ,MainHandle)
 
-		set(obj_handle, 'Enable', 'off')
+		set(ObjHandle, 'Enable', 'off')
 		drawnow;
 		if exist(event.NewValue , 'file')	
 			DataNIRS = LoadBOXYdata( event.NewValue,[], 'f');
- 			main_handle.Measure.Date.Value = DataNIRS.measureinfo.date;
-			main_handle.Measure.Length.Value = [num2str(DataNIRS.measureinfo.duration),' s'];
-			main_handle.Measure.DetectorCH.Value = num2str(DataNIRS.measureinfo.Aqinfo.DetectorChannel);
-			main_handle.Measure.AnalogCH.Value = num2str(DataNIRS.measureinfo.Aqinfo.AuxiliaryAnalogChannels);
+ 			MainHandle.Measure.Date.Value = DataNIRS.MeasureInfo.Date;
+			MainHandle.Measure.Length.Value = [num2str(DataNIRS.MeasureInfo.Duration),' s'];
+			MainHandle.Measure.DetectorCH.Value = num2str(DataNIRS.MeasureInfo.AqInfo.DetectorChannel);
+			MainHandle.Measure.AnalogCH.Value = num2str(DataNIRS.MeasureInfo.AqInfo.AuxiliaryAnalogChannels);
 			
 			else
 				Error('file not found')
 		end
-		set(obj_handle, 'Enable', 'on')
+		set(ObjHandle, 'Enable', 'on')
 end
 
 
-
+function renableHandle(~,~, objHandle)
+	set(objHandle, 'Enable', 'on')
+end
 
 
