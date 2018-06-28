@@ -225,7 +225,7 @@ end
 				data(ii , :) = sscanf(currentline, '%f');
 				if any(checkPoint == ii)
 					progress = floor(10*ii/nSamples);
-					set(LoadingBarHandle, 'String' , [repmat(char(9608),[1 progress]) repmat(' ',[1 10-progress])]);
+					set(LoadingBarHandle, 'Name' , [repmat(char(9608),[1 progress]) repmat(' ',[1 10-progress])]);
 					drawnow;
 				end
 				

@@ -143,23 +143,23 @@ function displaystudy(PreViwerHandle, NirsDataBase)
 	PreViwerHandle
 end
 
-function displaymeasure(PreViwerHandle)
+function displaymeasure(PreViwerHandle, ~)
 
 end
 
-function displayanalysis(PreViwerHandle)
+function displayanalysis(PreViwerHandle,~)
 	
 end
 
-function displayprobe(~)
+function displayprobe(~,~)
 	
 end
 
-function displaygoup(~)
+function displaygoup(~,~)
 
 end
 
-function displayanatomy(~)
+function displayanatomy(~,~)
 	
 end
 
@@ -173,7 +173,11 @@ function openanalysiswiewer(analysisId, dataBasePath)
 	measureid = analysisId(1:15);
 	analysisPath = fullfile(dataBasePath, studyId, measureid, analysisId(16:19));
 	data = load(analysisPath);
-	viewer(data.DataNIRS);
+	
+	%%cambiare tema
+	
+	
+	viewer(data.DataNIRS, 'classic');
 end
 
 function openanprobewiewer()

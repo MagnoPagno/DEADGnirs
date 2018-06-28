@@ -4,7 +4,7 @@ function [StudyFigure,dbNIRS] = NewNIRSMeasure(objHandle, ~ ,Hmain,dbNIRS)
 	drawnow;
 
 
-StudyFigure.MainFigure = figure('Visible', 'on', ...
+StudyFigure.MainFigure = figure(...
 	'position', Hmain.screenSize.*(3/4),...
     'Resize', 'on',...
     'Name', 'New NIRS measure', ...
@@ -212,16 +212,6 @@ StudyFigure.Subject.Pannel = uipanel (...
     'Position', [0.05 0.05 0.5 0.04]);
 
 
-%% Loading bar
-		StudyFigure.LoadingBarHandle = uicontrol( ...
-			'Parent', StudyFigure.MainFigure, ...
-			'Style','text',...
-			'String','          ',...
-			'Units', 'normalize', ...
-			'Position',[0.8 0.1 0.1 0.04],...			
-			'ForegroundColor', [1 0 0 ],...			
-			'BackgroundColor', [0 0 0 ],...
-			'HorizontalAlignment', 'left');
 %% Button
 
 		StudyFigure.LoadButton = uicontrol('Style', 'pushbutton',...
@@ -229,7 +219,7 @@ StudyFigure.Subject.Pannel = uipanel (...
 		'String', 'Load',...
 		'Units', 'normalize', ...
         'Position', [0.8 0.15 0.1 0.04],...
-        'Callback', {@LoadDatatoNewMeasureGUI ,StudyFigure , dbNIRS}); 
+        'Callback', {@LoadDatatoNewMeasureGUI ,StudyFigure ,Hmain dbNIRS}); 
 	
 	StudyFigure.MainFigure.Visible = 'on';
 
@@ -238,25 +228,36 @@ end
 
 
 %% Auxiliary function
-function	LoadDatatoNewMeasureGUI(ObjHandle ,~ ,MainHandle,DataBase)
+function	LoadDatatoNewMeasureGUI(~ ,~ ,StudyFigureHandle, MainHandle, DataBase)
 		nsamples = 500; % n of samples af the light data for the db
 		datatolightsave = 'DC'; %save only DC component in the database add 'ph' o AC for other component
-
-
-
-
-
-
-
-		set(ObjHandle, 'Enable', 'off')
-		drawnow;
 		
-		%inserire controllo su;lla bonta' dei campi
-		%in futuro inserire un controllo sui vari tipi di estensioni
-		if exist(MainHandle.MeasureSelector.Value , 'file')	
+		
+		selectedMeasurePath = StudyFigureHandle.MeasureSelector.Value;  % store all usefull figure proprety
+		selectedStudyIdx = StudyFigureHandle.StudySelector.SelectedIndex;
+		
+		%create a subject variable
+		subjectBDate = StudyFigureHandle.Subject.BirthDate.Value;%subjectBDate = '31/03/2018'
+		subjectAge =  datetime - datetime(subjectBDate);
+		Subject = NIRSSubject('name', StudyFigureHandle.Subject.Name.Value,...
+				'sname', StudyFigureHandle.Subject.Surname.Value,...
+				'bdate', StudyFigureHandle.Subject.BirthDate.Value,...
+				'age', subjectAge,...
+				'apgar1', StudyFigureHandle.Subject.Apgar1.Value,...
+				'apgar5', StudyFigureHandle.Subject.Apgar5.Value,...
+				'note', StudyFigureHandle.Subject.Note.Value);
+			
+		measureNote = StudyFigureHandle.Subject.Note.Value;
+		
+	    close(StudyFigureHandle.MainFigure)
+
+		
+		%inserire controllo sulla bonta' dei campi
+		%in futuro inserire un controllo sui vari tipi di estensioni e se
+		%e' stata cancellata lultima misura
+		if exist(selectedMeasurePath , 'file')	
 			
 			%create misure idx
-			selectedStudyIdx = MainHandle.StudySelector.SelectedIndex;
 			SelectedStudy = DataBase.Study(selectedStudyIdx);
 			if SelectedStudy.nMeasure == 0
 				measureID = [SelectedStudy.ID , 'M000']; 
@@ -267,18 +268,21 @@ function	LoadDatatoNewMeasureGUI(ObjHandle ,~ ,MainHandle,DataBase)
 				measureID =[SelectedStudy.ID ,'M',newID ]; 
 			end
 			
-			%create a subject variable
-			subjectBDate = MainHandle.Subject.BirthDate.Value;%subjectBDate = '31/03/2018'
-			subjectAge =  datetime - datetime(subjectBDate);   
-			Subject = NIRSSubject('name', MainHandle.Subject.Name.Value,...
-				'sname', MainHandle.Subject.Surname.Value,...
-				'bdate', MainHandle.Subject.BirthDate.Value,...
-				'age', subjectAge,...
-				'apgar1', MainHandle.Subject.Apgar1.Value,...
-				'apgar5', MainHandle.Subject.Apgar5.Value,...
-				'note', MainHandle.Subject.Note.Value);
+			
+			
+			
+			%% add a branch to the main tree and use it for the loading bar
+			
+			MainHandle.Tree.StudyNode(selectedStudyIdx).NewMeasures.MainNode = uiw.widget.TreeNode(... 
+				'Name','          ' ,...
+				'Parent',MainHandle.Tree.StudyNode(selectedStudyIdx).MainNode...
+			);
+			
+ 				%setIcon(Hmain.Tree.StudyNode(iStudy).NewMeasures.MainNode,measureIcon);%add the measure loading icon
+			
+
 			%% creiamo e salviao il file dei dati
-			DataNIRS = LoadBOXYdata(MainHandle.MeasureSelector.Value, [], [] , MainHandle.LoadingBarHandle ); %load all the data present in the file
+			DataNIRS = LoadBOXYdata(selectedMeasurePath, [], [] , MainHandle.Tree.StudyNode(selectedStudyIdx).NewMeasures.MainNode ); %load all the data present in the file
  			
 			analysisID = [ measureID,'A000'];
 			DataNIRS = NIRSMeasure(DataNIRS,...
@@ -305,7 +309,7 @@ function	LoadDatatoNewMeasureGUI(ObjHandle ,~ ,MainHandle,DataBase)
 			DataBase.Study(selectedStudyIdx).Measure(measIdx).Subject = Subject;
 			DataBase.Study(selectedStudyIdx).Measure(measIdx).Probe = [];
 			DataBase.Study(selectedStudyIdx).Measure(measIdx).nAnalysis = 0;
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).note = MainHandle.Subject.Note.Value;
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).note = measureNote;
 
 			DataBase.Study(selectedStudyIdx).Measure(measIdx).Analysis(1).ID = [measureID 'A000'];
 			DataBase.Study(selectedStudyIdx).Measure(measIdx).Analysis(1).note = '';
@@ -324,10 +328,24 @@ function	LoadDatatoNewMeasureGUI(ObjHandle ,~ ,MainHandle,DataBase)
 			
 			saveDBPath = fullfile(DataBase.Path ,'NIRSDataBase.mat');
 			save(saveDBPath,'DataBase');
+			
+			
+			
+			
+			
+			
+			
+			
+			MainHandle = NIRSTree(MainHandle,DataBase);
+			MainHandle.Tree.Main.expandNode(MainHandle.Tree.StudyNode(selectedStudyIdx).MainNode);
+			
+			
+			
+			
 			else
 				error('file not found')
 		end
-		close(MainHandle.MainFigure)
+		
 end
 		
 

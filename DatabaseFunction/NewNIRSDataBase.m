@@ -1,4 +1,4 @@
-function NewNIRSDataBase(path)
+function dirFullPath =  NewNIRSDataBase(pathDataBase, pathGnirs)
 %Create a new NIRS database and assign it a new ID on the new path
 
 %% Create a new ID
@@ -7,10 +7,10 @@ snID = num2str(nID,'%.6d');
 ID = ['D', snID]; %create yhe ID
 
 %% create the directory of DB
-dirFullPath = fullfile(path , 'NIRSDataBase'); %create the new path
+dirFullPath = fullfile(pathDataBase , 'NIRSDataBase'); %create the new path
 
 if ~exist(dirFullPath, 'dir') %check if there is nota another one
-	mkdir(path , 'NIRSDataBase');
+	mkdir(pathDataBase , 'NIRSDataBase');
 else
 	error('the database alredy exist')
 end
@@ -36,6 +36,10 @@ filefullPath = fullfile(dirFullPath, 'NIRSDataBase');
 save(filefullPath,'DataBase');
 	
 
+txtPath = fullfile(pathGnirs, 'Path.txt' );
+fid = fopen( txtPath, 'wt' );
+fprintf( fid, '%s', dirFullPath);
+fclose(fid);
 
 
 end
