@@ -7,6 +7,7 @@ dbNIRS = loadNIRSdb;
 
 
 %% Create the widget
+Hmain.dataBasePath = dbNIRS.Path;
 Hmain.screenSize = get(0,'ScreenSize');
 feature('DefaultCharacterSet', 'UTF8');
 
@@ -43,9 +44,8 @@ Hmain = NIRSToolbar(Hmain);
 
 Hmain = NIRSTree(Hmain,dbNIRS);
 
-Hmain = NIRSDisplayMeasure(Hmain,dbNIRS);
 
-Hmain = NIRSDisplayStudy(Hmain,dbNIRS);
+Hmain = NIRSDisplay(Hmain,dbNIRS);
 
 Hmain.mainFigure.Visible = 'on';
 

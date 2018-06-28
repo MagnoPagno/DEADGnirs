@@ -1,4 +1,4 @@
-function Measure = LoadBOXYdata(location, ~, mode) 
+function Measure = LoadBOXYdata(location, ~, mode, LoadingBarHandle) 
 % Load a BOXY file data 
 % Inputs: path of the boxy file and a NIRSMeasure data or []
 % 
@@ -202,9 +202,11 @@ end
 		fgetl(FILE);
 		temptimedata = textscan(FILE,'%f %*[^\n]');
 		Mdata.time = temptimedata{1};
-		if fast == true
+		
+		
+		if fast == false
 			
-		else
+			
 			frewind(FILE); %back to the begin of the file	
 			currentline = fgetl(FILE);     %acquisisce linea per linea fino a che incontra i dati
 			while ~contains(currentline,'#DATA BEGINS') %return to the start of the data 
@@ -214,11 +216,19 @@ end
 			ColumnName = ColumnName(~cellfun('isempty',ColumnName));%remove empty cell
 			fgetl(FILE);
 			
-			data = zeros (length(Mdata.time), length(ColumnName)); %pre alloc of the data
+			nSamples = length(Mdata.time);
+			data = zeros (nSamples, length(ColumnName)); %pre alloc of the data
+			checkPoint = floor(linspace(1 , nSamples, 10));
 			
-			for ii = 1 : length(Mdata.time)
+			for ii = 1 : nSamples
 				currentline = fgetl(FILE);
-				data(ii , :) = sscanf(currentline, '%f'); 
+				data(ii , :) = sscanf(currentline, '%f');
+				if any(checkPoint == ii)
+					progress = floor(10*ii/nSamples);
+					set(LoadingBarHandle, 'String' , [repmat(char(9608),[1 progress]) repmat(' ',[1 10-progress])]);
+					drawnow;
+				end
+				
 			end
 			
 %			data = fscanf(FILE,'%f',[length(ColumnName),Inf]); %parse all row data

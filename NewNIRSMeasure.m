@@ -52,7 +52,7 @@ StudyFigure.Subject.Pannel = uipanel (...
 
 	StudyFigure.Subject.BirthDate = uiw.widget.EditableText(...      
     'Parent',StudyFigure.Subject.Pannel,...=
-    'Value','Insert Birthdate',...
+    'Value','31/05/2018',...
     'Callback',@(h,e)disp(e),...
     'Label','Birthdate:',...
     'LabelLocation','left',...
@@ -159,7 +159,7 @@ StudyFigure.Subject.Pannel = uipanel (...
 	StudyFigure.StudySelector = uiw.widget.EditablePopupWithButton(...
     'Parent',StudyFigure.MainFigure,...
     'Items',{dbNIRS.Study.Nome},...
-    'Value',Hmain.Tree.SelectedNodes.Name,...
+    'Value',Hmain.Tree.Main.SelectedNodes.Name,...
     'Callback',@(h,e)disp(e.Interaction),...
     'Callback',@(h,e)disp(e),...
     'Label','Study',...
@@ -212,16 +212,27 @@ StudyFigure.Subject.Pannel = uipanel (...
     'Position', [0.05 0.05 0.5 0.04]);
 
 
-
+%% Loading bar
+		StudyFigure.LoadingBarHandle = uicontrol( ...
+			'Parent', StudyFigure.MainFigure, ...
+			'Style','text',...
+			'String','          ',...
+			'Units', 'normalize', ...
+			'Position',[0.8 0.1 0.1 0.04],...			
+			'ForegroundColor', [1 0 0 ],...			
+			'BackgroundColor', [0 0 0 ],...
+			'HorizontalAlignment', 'left');
 %% Button
 
 		StudyFigure.LoadButton = uicontrol('Style', 'pushbutton',...
+		'Parent', StudyFigure.MainFigure, ...
 		'String', 'Load',...
 		'Units', 'normalize', ...
         'Position', [0.8 0.15 0.1 0.04],...
         'Callback', {@LoadDatatoNewMeasureGUI ,StudyFigure , dbNIRS}); 
 	
 	StudyFigure.MainFigure.Visible = 'on';
+
 end
 
 
@@ -250,6 +261,7 @@ function	LoadDatatoNewMeasureGUI(ObjHandle ,~ ,MainHandle,DataBase)
 			if SelectedStudy.nMeasure == 0
 				measureID = [SelectedStudy.ID , 'M000']; 
 			else
+				
 				oldID = SelectedStudy.Measure(SelectedStudy.nMeasure).ID(13:15); %take only the 3 significant digits
 				newID = num2str(str2double(oldID)+1,'%.3d');
 				measureID =[SelectedStudy.ID ,'M',newID ]; 
@@ -266,7 +278,7 @@ function	LoadDatatoNewMeasureGUI(ObjHandle ,~ ,MainHandle,DataBase)
 				'apgar5', MainHandle.Subject.Apgar5.Value,...
 				'note', MainHandle.Subject.Note.Value);
 			%% creiamo e salviao il file dei dati
-			DataNIRS = LoadBOXYdata(MainHandle.MeasureSelector.Value, [], [] ); %load all the data present in the file
+			DataNIRS = LoadBOXYdata(MainHandle.MeasureSelector.Value, [], [] , MainHandle.LoadingBarHandle ); %load all the data present in the file
  			
 			analysisID = [ measureID,'A000'];
 			DataNIRS = NIRSMeasure(DataNIRS,...
@@ -287,21 +299,27 @@ function	LoadDatatoNewMeasureGUI(ObjHandle ,~ ,MainHandle,DataBase)
 			measIdx = DataBase.Study(selectedStudyIdx).nMeasure +1;
 			
 			DataBase.Study(selectedStudyIdx).nMeasure = measIdx;
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).ID =measureID;
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).Date =DataNIRS.MeasureInfo.Date;
- 			DataBase.Study(selectedStudyIdx).Measure(measIdx).Duration =DataNIRS.MeasureInfo.Duration;
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).Subject =Subject;
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).Probe =[];
-			
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).ID = measureID;
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).Date = DataNIRS.MeasureInfo.Date;
+ 			DataBase.Study(selectedStudyIdx).Measure(measIdx).Duration = DataNIRS.MeasureInfo.Duration;
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).Subject = Subject;
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).Probe = [];
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).nAnalysis = 0;
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).note = MainHandle.Subject.Note.Value;
+
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).Analysis(1).ID = [measureID 'A000'];
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).Analysis(1).note = '';
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).Analysis(1).analysis = 'row';
 				
 			columnName = DataNIRS.Data.Properties.VariableNames; %obtain al the column name in order to select the DC ones
 			dcIdx = contains(columnName,datatolightsave);   %obtain the selected column
-			step = ceil(linspace(DataNIRS.Data{1,1},DataNIRS.Data{end,1},nsamples));
+
+			selectedIndex = floor(linspace(1,length(DataNIRS.Data{:,1}),nsamples));
 			
-			lightdata = [table(DataNIRS.Data.reltime(step),'VariableNames', {'reltime'}), DataNIRS.Data(step,dcIdx)];
+			lightdata = [ table(DataNIRS.Data.reltime(selectedIndex),'VariableNames', {'reltime'}), DataNIRS.Data(selectedIndex,dcIdx)];
 			
 			
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).Ldata = lightdata;
+			DataBase.Study(selectedStudyIdx).Measure(measIdx).Analysis(1).Ldata = lightdata;
 			
 			
 			saveDBPath = fullfile(DataBase.Path ,'NIRSDataBase.mat');
@@ -309,7 +327,7 @@ function	LoadDatatoNewMeasureGUI(ObjHandle ,~ ,MainHandle,DataBase)
 			else
 				error('file not found')
 		end
-		set(ObjHandle, 'Enable', 'on')
+		close(MainHandle.MainFigure)
 end
 		
 
@@ -319,7 +337,7 @@ function	FastLoadDatatoNewMeasureGUI(ObjHandle ,event ,MainHandle)
 		set(ObjHandle, 'Enable', 'off')
 		drawnow;
 		if exist(event.NewValue , 'file')	
-			DataNIRS = LoadBOXYdata( event.NewValue,[], 'f');
+			DataNIRS = LoadBOXYdata( event.NewValue,[], 'f', []);
  			MainHandle.Measure.Date.Value = DataNIRS.MeasureInfo.Date;
 			MainHandle.Measure.Length.Value = [num2str(DataNIRS.MeasureInfo.Duration),' s'];
 			MainHandle.Measure.DetectorCH.Value = num2str(DataNIRS.MeasureInfo.AqInfo.DetectorChannel);

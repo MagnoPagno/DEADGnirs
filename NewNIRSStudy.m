@@ -92,6 +92,7 @@ function	AddStudytoDataBase( ~, ~, path , studyhandle )
 	DataBase.Study(DataBase.nStudy).AnalysisLength = 0;
 	DataBase.Study(DataBase.nStudy).Measure = [];
 	DataBase.Study(DataBase.nStudy).Groups = [];
+	DataBase.Study(DataBase.nStudy).note = [];
 	
 	%crea la nuova cartella del db
 	studyPath = fullfile(DataBase.Path,studyID);
