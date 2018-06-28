@@ -1,4 +1,4 @@
-function move_rectangle(hObject, eventData, h1, h2, h3, h4)
+function move_rectangle(hObject,eventData,hplot,fs)
 
 % Move rectangle in viewer overall plot
 %
@@ -7,7 +7,8 @@ function move_rectangle(hObject, eventData, h1, h2, h3, h4)
 % on June, 27th 2018 in Rovereto (TN)
 
 %hrect = findall(hObject,'Type','rectangle');
-h2.Position(1) = eventData.IntersectionPoint(1);
-h1.XLim = [eventData.IntersectionPoint(1) eventData.IntersectionPoint(1) + h2.Position(3)];
-h3.String = num2str(h2.Position(1));
-h4.String = num2str(h1.XLim(2));
+hplot.rectangle.Position(1) = eventData.IntersectionPoint(1);
+hplot.bigaxes1.XLim = [eventData.IntersectionPoint(1) eventData.IntersectionPoint(1) + hplot.rectangle.Position(3)];
+hplot.bigaxes2.XLim = [(eventData.IntersectionPoint(1))*fs (eventData.IntersectionPoint(1) + hplot.rectangle.Position(3))*fs];
+hplot.editmin.String = num2str(hplot.rectangle.Position(1));
+hplot.editmax.String = num2str(hplot.bigaxes1.XLim(2));

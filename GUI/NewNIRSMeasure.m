@@ -5,7 +5,7 @@ function [StudyFigure,dbNIRS] = NewNIRSMeasure(objHandle, ~ ,Hmain,dbNIRS)
 
 
 StudyFigure.MainFigure = figure(...
-	'position', Hmain.screenSize.*(3/4),...
+	'position', Hmain.screenSize.*(3/4),...MainHandle
     'Resize', 'on',...
     'Name', 'New NIRS measure', ...
     'Numbertitle', 'off', ...
@@ -141,7 +141,7 @@ StudyFigure.Subject.Pannel = uipanel (...
     'Units','normalized',...
     'Position',[0.05 0.25 0.3 0.15]);
 
-	%note
+	%noteMainHandle
 	StudyFigure.Measure.note = uiw.widget.EditableText(...      
     'Parent',StudyFigure.Measure.Pannel,...=
     'Value','',...
@@ -219,7 +219,7 @@ StudyFigure.Subject.Pannel = uipanel (...
 		'String', 'Load',...
 		'Units', 'normalize', ...
         'Position', [0.8 0.15 0.1 0.04],...
-        'Callback', {@LoadDatatoNewMeasureGUI ,StudyFigure ,Hmain dbNIRS}); 
+        'Callback', {@LoadDatatoNewMeasureGUI ,StudyFigure ,Hmain}); 
 	
 	StudyFigure.MainFigure.Visible = 'on';
 
@@ -228,16 +228,16 @@ end
 
 
 %% Auxiliary function
-function	LoadDatatoNewMeasureGUI(~ ,~ ,StudyFigureHandle, MainHandle, DataBase)
-		nsamples = 500; % n of samples af the light data for the db
-		datatolightsave = 'DC'; %save only DC component in the database add 'ph' o AC for other component
+function	LoadDatatoNewMeasureGUI(~ ,~ ,StudyFigureHandle, MainHandle)
+
+		%% store all useful figure propretybefore close it
 		
-		
-		selectedMeasurePath = StudyFigureHandle.MeasureSelector.Value;  % store all usefull figure proprety
-		selectedStudyIdx = StudyFigureHandle.StudySelector.SelectedIndex;
+		selectedMeasurePath = StudyFigureHandle.MeasureSelector.Value;   %path of the datatfile
+		selectedStudyIdx = StudyFigureHandle.StudySelector.SelectedIndex;  %idx og the study associated 
+		selectedStudyID = MainHandle.Tree.Main.SelectedNodes.Value;
 		
 		%create a subject variable
-		subjectBDate = StudyFigureHandle.Subject.BirthDate.Value;%subjectBDate = '31/03/2018'
+		subjectBDate = StudyFigureHandle.Subject.BirthDate.Value;
 		subjectAge =  datetime - datetime(subjectBDate);
 		Subject = NIRSSubject('name', StudyFigureHandle.Subject.Name.Value,...
 				'sname', StudyFigureHandle.Subject.Surname.Value,...
@@ -247,30 +247,10 @@ function	LoadDatatoNewMeasureGUI(~ ,~ ,StudyFigureHandle, MainHandle, DataBase)
 				'apgar5', StudyFigureHandle.Subject.Apgar5.Value,...
 				'note', StudyFigureHandle.Subject.Note.Value);
 			
-		measureNote = StudyFigureHandle.Subject.Note.Value;
+		measureNote = StudyFigureHandle.Subject.Note.Value; %note on the measure
 		
 	    close(StudyFigureHandle.MainFigure)
-
-		
-		%inserire controllo sulla bonta' dei campi
-		%in futuro inserire un controllo sui vari tipi di estensioni e se
-		%e' stata cancellata lultima misura
 		if exist(selectedMeasurePath , 'file')	
-			
-			%create misure idx
-			SelectedStudy = DataBase.Study(selectedStudyIdx);
-			if SelectedStudy.nMeasure == 0
-				measureID = [SelectedStudy.ID , 'M000']; 
-			else
-				
-				oldID = SelectedStudy.Measure(SelectedStudy.nMeasure).ID(13:15); %take only the 3 significant digits
-				newID = num2str(str2double(oldID)+1,'%.3d');
-				measureID =[SelectedStudy.ID ,'M',newID ]; 
-			end
-			
-			
-			
-			
 			%% add a branch to the main tree and use it for the loading bar
 			
 			MainHandle.Tree.StudyNode(selectedStudyIdx).NewMeasures.MainNode = uiw.widget.TreeNode(... 
@@ -280,68 +260,23 @@ function	LoadDatatoNewMeasureGUI(~ ,~ ,StudyFigureHandle, MainHandle, DataBase)
 			
  				%setIcon(Hmain.Tree.StudyNode(iStudy).NewMeasures.MainNode,measureIcon);%add the measure loading icon
 			
-
 			%% creiamo e salviao il file dei dati
 			DataNIRS = LoadBOXYdata(selectedMeasurePath, [], [] , MainHandle.Tree.StudyNode(selectedStudyIdx).NewMeasures.MainNode ); %load all the data present in the file
  			
-			analysisID = [ measureID,'A000'];
 			DataNIRS = NIRSMeasure(DataNIRS,...
-				'AnalysisID',analysisID,... 
-				'MeasureID',measureID,... 
-				'StudyID',SelectedStudy.ID,... 
+				'StudyID',selectedStudyID,... 
 				'Subject',Subject,...
+				'Note',measureNote,...
 				'Probe', [],...%%cercarlo nel database 
 				'Eventss',[],...%%tirarli fuori in qualche modo
 				'Video',[]... %%se ce lo carichi altrimenti no
 				); % load all the metadata present in the window
 			
-			measurePath = fullfile(DataBase.Path,SelectedStudy.ID,measureID);
-			mkdir(measurePath);
-			filepath = fullfile(measurePath, 'A000');
-			save(filepath,'DataNIRS');
-			%% update database
-			measIdx = DataBase.Study(selectedStudyIdx).nMeasure +1;
-			
-			DataBase.Study(selectedStudyIdx).nMeasure = measIdx;
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).ID = measureID;
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).Date = DataNIRS.MeasureInfo.Date;
- 			DataBase.Study(selectedStudyIdx).Measure(measIdx).Duration = DataNIRS.MeasureInfo.Duration;
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).Subject = Subject;
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).Probe = [];
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).nAnalysis = 0;
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).note = measureNote;
-
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).Analysis(1).ID = [measureID 'A000'];
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).Analysis(1).note = '';
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).Analysis(1).analysis = 'row';
-				
-			columnName = DataNIRS.Data.Properties.VariableNames; %obtain al the column name in order to select the DC ones
-			dcIdx = contains(columnName,datatolightsave);   %obtain the selected column
-
-			selectedIndex = floor(linspace(1,length(DataNIRS.Data{:,1}),nsamples));
-			
-			lightdata = [ table(DataNIRS.Data.reltime(selectedIndex),'VariableNames', {'reltime'}), DataNIRS.Data(selectedIndex,dcIdx)];
-			
-			
-			DataBase.Study(selectedStudyIdx).Measure(measIdx).Analysis(1).Ldata = lightdata;
-			
-			
-			saveDBPath = fullfile(DataBase.Path ,'NIRSDataBase.mat');
-			save(saveDBPath,'DataBase');
-			
-			
-			
-			
-			
-			
-			
+			DataBase = addmeasuredatabase(DataNIRS,MainHandle.dataBasePath);
 			
 			MainHandle = NIRSTree(MainHandle,DataBase);
 			MainHandle.Tree.Main.expandNode(MainHandle.Tree.StudyNode(selectedStudyIdx).MainNode);
-			
-			
-			
-			
+		
 			else
 				error('file not found')
 		end

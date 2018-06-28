@@ -171,13 +171,13 @@ function openanalysiswiewer(analysisId, dataBasePath)
 	% dataBaseId = analysisId(1:7);
 	studyId = analysisId(1:11);
 	measureid = analysisId(1:15);
-	analysisPath = fullfile(dataBasePath, studyId, measureid, analysisId(16:19));
+	analysisPath = fullfile(dataBasePath, studyId, measureid, analysisId);
 	data = load(analysisPath);
 	
 	%%cambiare tema
 	
 	
-	viewer(data.DataNIRS, 'classic');
+	viewer(data.DataNIRSMeasure, 'classic');
 end
 
 function openanprobewiewer()

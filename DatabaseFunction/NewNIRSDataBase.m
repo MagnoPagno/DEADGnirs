@@ -4,7 +4,7 @@ function dirFullPath =  NewNIRSDataBase(pathDataBase, pathGnirs)
 %% Create a new ID
 nID = randi(1000000)-1; %creo un  numero compreso tra 0 e 999999
 snID = num2str(nID,'%.6d');
-ID = ['D', snID]; %create yhe ID
+ID = ['D', snID]; %create the ID
 
 %% create the directory of DB
 dirFullPath = fullfile(pathDataBase , 'NIRSDataBase'); %create the new path
@@ -23,6 +23,10 @@ DataBase.ID = ID;
 DataBase.nStudy = 0;
 DataBase.nProbe = 0;
 DataBase.nAnatomy = 0;
+
+DataBase.nStudyPersistent = 0;  %%don't change after a deletion
+DataBase.nProbePersistent = 0;
+DataBase.nAnatomyPersistent = 0;
 
 DataBase.Study = [];
 DataBase.Probe = [];

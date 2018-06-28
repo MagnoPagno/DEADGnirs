@@ -96,8 +96,12 @@ function	AddStudytoDataBase( ~, ~, MainHandle , studyhandle )
 	DataBase.Study(DataBase.nStudy).ID = studyID;
 	DataBase.Study(DataBase.nStudy).Nome = studyhandle.Subject.StudyName.Value;
 	DataBase.Study(DataBase.nStudy).Data = datetime;
+	
 	DataBase.Study(DataBase.nStudy).nMeasure = 0;
 	DataBase.Study(DataBase.nStudy).nGroups = 0;
+	DataBase.Study(DataBase.nStudy).nMeasurePersistent = 0;
+	DataBase.Study(DataBase.nStudy).nGroupsPersistent = 0;
+	
 	DataBase.Study(DataBase.nStudy).MeasureLength = 0;
 	DataBase.Study(DataBase.nStudy).AnalysisLength = 0;
 	DataBase.Study(DataBase.nStudy).Measure = [];

@@ -123,6 +123,9 @@
 
 						case 'Analysis'
 							obj.Analysis = varargin{i+1};
+						
+						case 'Note'
+							obj.Note = varargin{i+1};
 
 						otherwise 
 							warning('data not loaded')
